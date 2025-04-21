@@ -8,17 +8,17 @@ const avatars = {
   idle: [
     `  .-""-.  `,
     ` /      \\ `,
-    `|  o  o  |`,
-    `|   --   |`,
-    ` \\ .--. / `,
+    `|  ^  ^  |`,
+    `|  \\__/  |`,  // Smiling mouth shape
+    ` \\      / `,
     `  '----'  `
   ],
   thinking: [
     `  .-""-.  `,
     ` /      \\ `,
-    `|  ^  ^  |`,
-    `|   --   |`,
-    ` \\ .**. / `,
+    `|  o  o  |`,
+    `|   ..   |`, // Thinking indicated by dots mouth
+    ` \\ '--' / `,
     `  '----'  `
   ],
   talking: [
@@ -88,3 +88,4 @@ export const AsciiAvatar: React.FC<AsciiAvatarProps> = ({ state }) => {
 };
 
 export default AsciiAvatar;
+
