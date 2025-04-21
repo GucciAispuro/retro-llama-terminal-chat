@@ -91,20 +91,7 @@ export default {
                 flicker: {
                     '0%, 100%': { opacity: '1' },
                     '50%': { opacity: '0.8' }
-                }
-            },
-            animation: {
-                scanline: 'scanline 8s linear infinite',
-                blink: 'blink 1s infinite',
-                typing: 'typing 1.5s steps(40, end)',
-                flicker: 'flicker 0.5s infinite'
-            },
-			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
-			},
-			keyframes: {
+                },
 				'accordion-down': {
 					from: {
 						height: '0'
@@ -121,10 +108,19 @@ export default {
 						height: '0'
 					}
 				}
-			},
-			animation: {
+            },
+            animation: {
+                scanline: 'scanline 8s linear infinite',
+                blink: 'blink 1s infinite',
+                typing: 'typing 1.5s steps(40, end)',
+                flicker: 'flicker 0.5s infinite',
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+            },
+			borderRadius: {
+				lg: 'var(--radius)',
+				md: 'calc(var(--radius) - 2px)',
+				sm: 'calc(var(--radius) - 4px)'
 			}
 		}
 	},
