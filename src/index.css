@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'VT323';
+  src: url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -35,19 +41,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -96,6 +95,65 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-terminal-black text-terminal-green;
+    font-family: 'VT323', monospace;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .crt-effect {
+    @apply rounded-lg overflow-hidden relative;
+    background-color: #000;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2), 
+                inset 0 0 5px rgba(0, 255, 0, 0.1);
+  }
+  
+  .crt-effect::before {
+    content: " ";
+    @apply absolute top-0 left-0 w-full h-full pointer-events-none;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    z-index: 100;
+  }
+  
+  .crt-effect::after {
+    content: " ";
+    @apply absolute top-0 left-0 w-full opacity-10 pointer-events-none animate-scanline;
+    height: 20px;
+    background: rgba(0, 255, 0, 0.2);
+    z-index: 100;
+  }
+  
+  .terminal-text {
+    @apply font-mono text-terminal-green whitespace-pre-wrap;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+  }
+  
+  .blinking-cursor {
+    @apply animate-blink inline-block ml-1;
+    width: 10px;
+    height: 20px;
+    background-color: #00ff00;
+  }
+  
+  .terminal-input {
+    @apply bg-transparent border-none text-terminal-green outline-none w-full font-mono;
+    caret-color: #00ff00;
+  }
+  
+  .ascii-avatar {
+    @apply font-mono text-sm text-terminal-green whitespace-pre p-2;
+  }
+  
+  .flicker {
+    animation: flicker 0.15s infinite alternate;
+  }
+  
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    25% { opacity: 0.9; }
+    50% { opacity: 0.75; }
+    75% { opacity: 0.9; }
   }
 }

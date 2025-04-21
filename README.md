@@ -1,73 +1,81 @@
-# Welcome to your Lovable project
 
-## Project info
+# Retro Llama Terminal
 
-**URL**: https://lovable.dev/projects/d8430ce8-8189-46fd-8bdd-af1b1b21c816
+A retro-styled terminal interface for chatting with the Llama 2 model using Ollama.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Classic CRT/terminal aesthetic with scan lines and flicker effects
+- ASCII art avatar that changes states based on model activity
+- Real-time token streaming from Ollama
+- Fully local - no external APIs used
+- Responsive terminal-like interface
 
-**Use Lovable**
+## Prerequisites
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d8430ce8-8189-46fd-8bdd-af1b1b21c816) and start prompting.
+- [Node.js](https://nodejs.org/) (v16 or later)
+- [Ollama](https://ollama.ai/) installed and running locally
 
-Changes made via Lovable will be committed automatically to this repo.
+## Setup
 
-**Use your preferred IDE**
+1. **Install dependencies:**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+npm install
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. **Pull the Llama 2 model with Ollama:**
 
-Follow these steps:
+```bash
+ollama pull llama2
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. **Start Ollama service:**
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+ollama serve
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4. **Start the development server in a new terminal:**
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+5. **Access the application:**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Open your browser and navigate to http://localhost:8080
 
-**Use GitHub Codespaces**
+## Building for Production
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Web version
 
-## What technologies are used for this project?
+```bash
+npm run build
+```
 
-This project is built with:
+### Executable (Windows)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+To create a standalone executable for Windows:
 
-## How can I deploy this project?
+1. Install Electron Packager globally:
 
-Simply open [Lovable](https://lovable.dev/projects/d8430ce8-8189-46fd-8bdd-af1b1b21c816) and click on Share -> Publish.
+```bash
+npm install -g electron-packager
+```
 
-## Can I connect a custom domain to my Lovable project?
+2. Create a minimal electron wrapper (not included in this repo)
 
-Yes, you can!
+3. Package the application:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```bash
+electron-packager . retro-llama --platform=win32 --arch=x64 --out=dist
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## License
+
+MIT
+
+## About
+
+This terminal interface provides a nostalgic retro computing experience while allowing you to interact with state-of-the-art language models locally.

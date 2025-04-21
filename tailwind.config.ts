@@ -61,8 +61,44 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+                // Retro terminal colors
+                terminal: {
+                    black: '#000000',
+                    green: '#00ff00',
+                    amber: '#ffb000',
+                    white: '#ffffff',
+                    gray: '#8E9196',
+                    darkGray: '#333333',
+                    darkGreen: '#004000',
+                    darkAmber: '#b37800'
+                }
 			},
+            // CRT scan line animation
+            keyframes: {
+                scanline: {
+                    '0%': { transform: 'translateY(0%)' },
+                    '100%': { transform: 'translateY(100%)' }
+                },
+                blink: {
+                    '0%, 49%': { opacity: '1' },
+                    '50%, 100%': { opacity: '0' }
+                },
+                typing: {
+                    '0%': { width: '0%' },
+                    '100%': { width: '100%' }
+                },
+                flicker: {
+                    '0%, 100%': { opacity: '1' },
+                    '50%': { opacity: '0.8' }
+                }
+            },
+            animation: {
+                scanline: 'scanline 8s linear infinite',
+                blink: 'blink 1s infinite',
+                typing: 'typing 1.5s steps(40, end)',
+                flicker: 'flicker 0.5s infinite'
+            },
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
