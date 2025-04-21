@@ -5,7 +5,7 @@ import AsciiAvatar from './AsciiAvatar';
 
 // Types for messages
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
@@ -13,7 +13,9 @@ const TerminalChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [ollamaStatus, setOllamaStatus] = useState<boolean | null>(null);
+  const [ollamaStatus, setOllamaStatus] = useState<{running: boolean, modelAvailable: boolean} | null>(null);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [selectedModel, setSelectedModel] = useState('llama2');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -24,33 +26,61 @@ const TerminalChat: React.FC = () => {
     }
   }, []);
 
+  // Fetch available models
+  const fetchModels = async () => {
+    const models = await ollamaService.getModels();
+    setAvailableModels(models.map(m => m.name));
+    return models;
+  };
+
   // Check Ollama status on mount
   useEffect(() => {
     const checkOllama = async () => {
-      const status = await ollamaService.checkStatus();
+      const status = await ollamaService.checkStatus(selectedModel);
       setOllamaStatus(status);
       
-      if (status) {
-        setMessages(prev => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: 'Terminal ready. Ollama connected. Type your message and press Enter.'
-          }
-        ]);
+      if (status.running) {
+        // Fetch models
+        const models = await fetchModels();
+        
+        if (status.modelAvailable) {
+          setMessages(prev => [
+            ...prev,
+            {
+              role: 'assistant',
+              content: `Terminal ready. Ollama connected. Type your message and press Enter.`
+            }
+          ]);
+        } else {
+          const modelsList = models.length > 0 
+            ? `Available models: ${models.map(m => m.name).join(', ')}.` 
+            : 'No models found.';
+            
+          setMessages(prev => [
+            ...prev,
+            {
+              role: 'system',
+              content: `Ollama is running, but model "${selectedModel}" is not available. ${modelsList} Please run "ollama pull ${selectedModel}" in your terminal to download it.`
+            }
+          ]);
+        }
       } else {
         setMessages(prev => [
           ...prev,
           {
-            role: 'assistant',
-            content: 'Error: Could not connect to Ollama. Make sure it is running at http://localhost:11434.'
+            role: 'system',
+            content: 'Error: Could not connect to Ollama. Make sure it is running with "ollama serve" at http://localhost:11434.'
           }
         ]);
       }
     };
     
     checkOllama();
-  }, []);
+
+    // Set up periodic checking
+    const intervalId = setInterval(checkOllama, 10000);
+    return () => clearInterval(intervalId);
+  }, [selectedModel]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -62,6 +92,12 @@ const TerminalChat: React.FC = () => {
     if (e) e.preventDefault();
     
     if (!input.trim() || isGenerating) return;
+    
+    // Check if it's a command
+    if (input.startsWith('/')) {
+      handleCommand(input);
+      return;
+    }
     
     // Add user message
     const userMessage: Message = { role: 'user', content: input };
@@ -75,17 +111,17 @@ const TerminalChat: React.FC = () => {
     
     try {
       // Create an empty assistant message
-      const assistantMessageIndex = messages.length;
+      const assistantIndex = messages.length;
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
       
       // Stream the response
-      await ollamaService.sendMessage(input, 'llama2', (token) => {
+      await ollamaService.sendMessage(input, selectedModel, (token) => {
         setMessages(prev => {
           const newMessages = [...prev];
-          if (newMessages[assistantMessageIndex]) {
-            newMessages[assistantMessageIndex] = {
-              ...newMessages[assistantMessageIndex],
-              content: newMessages[assistantMessageIndex].content + token
+          if (newMessages[assistantIndex]) {
+            newMessages[assistantIndex] = {
+              ...newMessages[assistantIndex],
+              content: newMessages[assistantIndex].content + token
             };
           }
           return newMessages;
@@ -96,13 +132,80 @@ const TerminalChat: React.FC = () => {
       setMessages(prev => [
         ...prev,
         {
-          role: 'assistant',
+          role: 'system',
           content: 'Error communicating with Ollama. Please try again.'
         }
       ]);
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // Handle commands
+  const handleCommand = async (cmd: string) => {
+    const command = cmd.trim().toLowerCase();
+    
+    if (command === '/help') {
+      setMessages(prev => [...prev, 
+        { role: 'system', content: '--- HELP ---' },
+        { role: 'system', content: '/models - List available models' },
+        { role: 'system', content: '/use [model] - Switch to a different model' },
+        { role: 'system', content: '/clear - Clear chat history' },
+        { role: 'system', content: '/status - Check Ollama connection status' },
+        { role: 'system', content: '/help - Show this help message' }
+      ]);
+    } 
+    else if (command === '/clear') {
+      setMessages([]);
+    }
+    else if (command === '/models') {
+      const models = await fetchModels();
+      if (models.length > 0) {
+        setMessages(prev => [...prev, 
+          { role: 'system', content: '--- AVAILABLE MODELS ---' },
+          { role: 'system', content: models.map(m => m.name).join(', ') }
+        ]);
+      } else {
+        setMessages(prev => [...prev, 
+          { role: 'system', content: 'No models available. Use "ollama pull [model]" to download models.' }
+        ]);
+      }
+    }
+    else if (command.startsWith('/use ')) {
+      const model = command.split(' ')[1];
+      if (model) {
+        setSelectedModel(model);
+        setMessages(prev => [...prev, 
+          { role: 'system', content: `Switching to model: ${model}` }
+        ]);
+        
+        // Check if the model is available
+        const status = await ollamaService.checkStatus(model);
+        if (!status.modelAvailable) {
+          setMessages(prev => [...prev, 
+            { role: 'system', content: `Model "${model}" is not available. Please run "ollama pull ${model}" in your terminal.` }
+          ]);
+        }
+      }
+    }
+    else if (command === '/status') {
+      const status = await ollamaService.checkStatus(selectedModel);
+      setOllamaStatus(status);
+      
+      setMessages(prev => [...prev, 
+        { role: 'system', content: `--- STATUS ---` },
+        { role: 'system', content: `Ollama server: ${status.running ? 'Running' : 'Not running'}` },
+        { role: 'system', content: `Model "${selectedModel}": ${status.modelAvailable ? 'Available' : 'Not available'}` }
+      ]);
+    }
+    else {
+      setMessages(prev => [...prev, 
+        { role: 'system', content: `Unknown command: ${command}. Type /help for available commands.` }
+      ]);
+    }
+    
+    // Clear input
+    setInput('');
   };
 
   // Handle keyboard shortcuts
@@ -137,11 +240,13 @@ const TerminalChat: React.FC = () => {
                     className={`max-w-[80%] terminal-text p-2 rounded ${
                       message.role === 'user' 
                         ? 'bg-terminal-darkGreen text-terminal-white' 
+                        : message.role === 'system'
+                        ? 'border border-terminal-amber text-terminal-amber'
                         : 'border border-terminal-green'
                     }`}
                   >
                     <div className="font-mono">
-                      {message.role === 'user' ? '> ' : '$ '}
+                      {message.role === 'user' ? '> ' : message.role === 'system' ? '! ' : '$ '}
                       {message.content}
                     </div>
                   </div>
@@ -159,6 +264,11 @@ const TerminalChat: React.FC = () => {
             <div className="text-xs text-terminal-green mt-2 text-center">
               {isGenerating ? "PROCESSING" : "READY"}
             </div>
+            {selectedModel && (
+              <div className="text-xs text-terminal-amber mt-2 text-center">
+                {selectedModel}
+              </div>
+            )}
           </div>
         </div>
         
@@ -172,14 +282,16 @@ const TerminalChat: React.FC = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isGenerating || ollamaStatus === false}
+              disabled={isGenerating || (ollamaStatus && (!ollamaStatus.running || !ollamaStatus.modelAvailable))}
               className="terminal-input flex-1"
               placeholder={
                 isGenerating
                   ? "Waiting for response..."
-                  : ollamaStatus === false
+                  : ollamaStatus && !ollamaStatus.running
                   ? "Ollama not connected"
-                  : "Type your message here..."
+                  : ollamaStatus && !ollamaStatus.modelAvailable
+                  ? `Model ${selectedModel} not available, type /models`
+                  : "Type your message here or /help for commands..."
               }
             />
             {isGenerating && <div className="blinking-cursor"></div>}
@@ -188,8 +300,17 @@ const TerminalChat: React.FC = () => {
         
         {/* Connection Status */}
         <div className="p-1 border-t border-terminal-green flex justify-between text-xs">
-          <div>OLLAMA STATUS: {ollamaStatus === null ? "CHECKING" : ollamaStatus ? "CONNECTED" : "DISCONNECTED"}</div>
-          <div>PRESS CTRL+C TO EXIT</div>
+          <div>
+            OLLAMA: {ollamaStatus === null 
+              ? "CHECKING" 
+              : ollamaStatus.running 
+                ? ollamaStatus.modelAvailable 
+                  ? `CONNECTED (${selectedModel})` 
+                  : `CONNECTED (NO ${selectedModel})` 
+                : "DISCONNECTED"
+            }
+          </div>
+          <div className="text-terminal-amber">Type /help for commands</div>
         </div>
       </div>
     </div>
